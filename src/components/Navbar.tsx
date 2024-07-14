@@ -1,3 +1,5 @@
+"use client"
+
 import { LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 

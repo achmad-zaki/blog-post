@@ -1,16 +1,29 @@
 "use client"
 
 import { SubmitHandler, useForm } from "react-hook-form"
-import { TFormInput } from "@/types"
+import { TFormInputPost } from "@/types"
 import { FC } from "react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { Tag } from "@prisma/client";
 
 interface IFormPostProps {
-    submit: SubmitHandler<TFormInput>;
+    submit: SubmitHandler<TFormInputPost>;
     isEditing?: boolean;
+    isLoading?: boolean;
 }
 
-const FormPost: FC<IFormPostProps> = ({ submit, isEditing }) => {
-    const { register, handleSubmit } = useForm<TFormInput>()
+const FormPost: FC<IFormPostProps> = ({ submit, isEditing, isLoading }) => {
+    const { register, handleSubmit } = useForm<TFormInputPost>()
+
+    const { data: dataTags, isLoading: isLoadingTags } = useQuery<Tag[]>({
+        queryKey: ["tags"],
+        queryFn: async () => {
+            const response = await axios.get("/api/tags")
+
+            return response?.data
+        }
+    })
 
     return (
         <form onSubmit={handleSubmit(submit)} className="card bg-neutral p-5 w-96 h-full mx-auto">
@@ -24,14 +37,19 @@ const FormPost: FC<IFormPostProps> = ({ submit, isEditing }) => {
             </div>
             <div className="form-control">
                 <label htmlFor="tag" className="label">Tag</label>
-                <select defaultValue={''} {...register("tag", { required: true })} name="tag" className="select select-bordered w-full">
-                    <option disabled value={''}>Who shot first?</option>
-                    <option>javascript</option>
-                    <option>php</option>
-                    <option>python</option>
-                </select>
+                {isLoadingTags ? (
+                    <span className="loading loading-dots loading-md mx-auto"></span>
+                ) : (
+                    <select defaultValue={''} {...register("tagId", { required: true })} className="select select-bordered w-full">
+                        <option disabled value={''}>Select tag</option>
+                        {dataTags?.map((tag, index) => (
+                            <option key={index} value={tag.id}>{tag.name}</option>
+                        ))}
+                    </select>
+                )}
             </div>
             <button type="submit" className="btn btn-primary mt-8">
+                {isLoading && <span className="loading loading-spinner loading-sm"></span>}
                 {isEditing ? 'Update' : 'Create'}
             </button>
         </form>
